@@ -1,10 +1,7 @@
 'use client'
 
-import { DndContext, closestCenter } from '@dnd-kit/core'
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable'
+import { DndContext, DragEndEvent, closestCenter } from '@dnd-kit/core'
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import PdfItem from './PdfItem'
 import { PdfFile } from '@/types/pdf'
 
@@ -14,7 +11,7 @@ type Props = {
 }
 
 export default function PdfList({ pdfs, setPdfs }: Props) {
-  function handleDragEnd(event: any) {
+  function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
     if (!over || active.id === over.id) return
 
@@ -29,7 +26,8 @@ export default function PdfList({ pdfs, setPdfs }: Props) {
   }
 
   function removePdf(id: string) {
-    setPdfs(prev => prev.filter(pdf => pdf.id !== id))
+    const updated = pdfs.filter(pdf => pdf.id !== id)
+    setPdfs(updated)
   }
 
   return (
@@ -39,11 +37,7 @@ export default function PdfList({ pdfs, setPdfs }: Props) {
         strategy={verticalListSortingStrategy}
       >
         {pdfs.map(pdf => (
-          <PdfItem
-            key={pdf.id}
-            pdf={pdf}
-            onRemove={removePdf}
-          />
+          <PdfItem key={pdf.id} pdf={pdf} onRemove={removePdf} />
         ))}
       </SortableContext>
     </DndContext>
