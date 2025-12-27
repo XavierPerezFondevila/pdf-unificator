@@ -11,6 +11,7 @@ type Props = {
 }
 
 export default function PdfList({ pdfs, setPdfs }: Props) {
+  // Manejo del drag-and-drop
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
     if (!over || active.id === over.id) return
@@ -22,9 +23,11 @@ export default function PdfList({ pdfs, setPdfs }: Props) {
     const [moved] = updated.splice(oldIndex, 1)
     updated.splice(newIndex, 0, moved)
 
+    // Se pasa directamente el array actualizado
     setPdfs(updated)
   }
 
+  // Eliminar un PDF
   function removePdf(id: string) {
     const updated = pdfs.filter(pdf => pdf.id !== id)
     setPdfs(updated)
@@ -37,7 +40,11 @@ export default function PdfList({ pdfs, setPdfs }: Props) {
         strategy={verticalListSortingStrategy}
       >
         {pdfs.map(pdf => (
-          <PdfItem key={pdf.id} pdf={pdf} onRemove={removePdf} />
+          <PdfItem
+            key={pdf.id}
+            pdf={pdf}
+            onRemove={removePdf}
+          />
         ))}
       </SortableContext>
     </DndContext>
