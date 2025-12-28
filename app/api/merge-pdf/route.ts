@@ -1,24 +1,57 @@
-import { NextResponse } from 'next/server'
-import { mergePdfBuffers } from '@/lib/pdf/pdfMerger'
+import { NextRequest, NextResponse } from 'next/server'
+import { PDFDocument } from 'pdf-lib'
 
-export async function POST(req: Request) {
-  // Obtener los archivos del formulario
-  const formData = await req.formData()
-  const files = formData.getAll('files') as File[]
+export const runtime = 'edge' // Opcional: para deploy en Vercel Edge Functions
 
-  // Convertir cada archivo en ArrayBuffer
-  const buffers = await Promise.all(files.map(file => file.arrayBuffer()))
+export async function POST(req: NextRequest) {
+  try {
+    const formData = await req.formData()
+    const files = formData.getAll('files') // obtenemos todos los archivos bajo el mismo nombre
 
-  // Unir los PDFs (merge)
-  const mergedPdf = await mergePdfBuffers(buffers)
+    if (!files || files.length < 2) {
+      return NextResponse.json(
+        { message: 'Se requieren al menos 2 PDFs para unir' },
+        { status: 400 }
+      )
+    }
 
-  // Convertir a Uint8Array explícitamente para NextResponse
-  const mergedPdfUint8 = new Uint8Array(mergedPdf)
+    // Convertimos los archivos a ArrayBuffer
+    const buffers: ArrayBuffer[] = []
+    for (const file of files) {
+      if (!(file instanceof File)) continue
+      const arrayBuffer = await file.arrayBuffer()
+      buffers.push(arrayBuffer)
+    }
 
-  return new NextResponse(mergedPdfUint8, {
-    headers: {
-      'Content-Type': 'application/pdf',
-      'Content-Disposition': 'attachment; filename="archivo-unificado.pdf"',
-    },
-  })
+    if (buffers.length < 2) {
+      return NextResponse.json(
+        { message: 'Se requieren al menos 2 PDFs válidos' },
+        { status: 400 }
+      )
+    }
+
+    // Fusionamos los PDFs
+    const mergedPdf = await PDFDocument.create()
+    for (const buffer of buffers) {
+      const pdf = await PDFDocument.load(buffer)
+      const pages = await mergedPdf.copyPages(pdf, pdf.getPageIndices())
+      pages.forEach((page) => mergedPdf.addPage(page))
+    }
+
+    const mergedPdfBytes = await mergedPdf.save()
+
+    return new NextResponse(Buffer.from(mergedPdfBytes), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': 'attachment; filename="archivo-unificado.pdf"',
+      },
+    })
+  } catch (error) {
+    console.error('Error uniendo PDFs:', error)
+    return NextResponse.json(
+      { message: 'Error al unir los PDFs' },
+      { status: 500 }
+    )
+  }
 }

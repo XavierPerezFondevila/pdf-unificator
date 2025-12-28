@@ -8,6 +8,7 @@ import { PdfFile } from '@/types/pdf'
 type Props = {
   pdfs: PdfFile[]
   setPdfs: (pdfs: PdfFile[]) => void
+  onRemove?: (id: string) => void // <-- agregamos la prop onRemove
 }
 
 export default function PdfList({ pdfs, setPdfs }: Props) {
