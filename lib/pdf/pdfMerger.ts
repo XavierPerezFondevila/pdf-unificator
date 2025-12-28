@@ -45,14 +45,15 @@ export async function mergeLargePdfBuffers(
 
   let currentBuffers = [...buffers]
 
-  // Fusionamos en lotes hasta que quede un único PDF
   while (currentBuffers.length > 1) {
     const newBuffers: ArrayBuffer[] = []
 
     for (let i = 0; i < currentBuffers.length; i += batchSize) {
       const batch = currentBuffers.slice(i, i + batchSize)
       const merged = await mergePdfBuffers(batch)
-      newBuffers.push(merged.buffer) // convertimos a ArrayBuffer para la siguiente ronda
+      
+      // ✅ Convertimos a ArrayBuffer puro para TypeScript
+      newBuffers.push(new Uint8Array(merged).buffer)
     }
 
     currentBuffers = newBuffers
@@ -60,3 +61,4 @@ export async function mergeLargePdfBuffers(
 
   return new Uint8Array(currentBuffers[0])
 }
+
